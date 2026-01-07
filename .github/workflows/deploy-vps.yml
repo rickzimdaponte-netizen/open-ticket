@@ -1,0 +1,47 @@
+name: Deploy to VPS via SSH
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy to VPS
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Deploy to remote server (SSH)
+        uses: appleboy/ssh-action@v0.1.8
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          script: |
+            set -e
+            REMOTE_PATH=${{ secrets.REMOTE_PATH || '/home/' + secrets.SSH_USER + '/open-ticket' }}
+            echo "Using remote path: $REMOTE_PATH"
+
+            # Ensure directories
+            mkdir -p "$REMOTE_PATH"
+
+            # If repo isn't cloned yet, clone it; otherwise fetch and reset
+            if [ ! -d "$REMOTE_PATH/.git" ]; then
+              git clone https://github.com/${{ github.repository }} "$REMOTE_PATH"
+            fi
+
+            cd "$REMOTE_PATH"
+            git fetch --all --prune
+            git reset --hard origin/main
+
+            # Write .env from secrets (overwrites existing .env). Add additional env secrets as needed.
+            echo "TOKEN=${{ secrets.TOKEN }}" > "$REMOTE_PATH/.env"
+
+            # Build and restart using docker compose
+            docker compose down || true
+            docker compose up -d --build --remove-orphans
+
+            echo "Deployment completed successfully."

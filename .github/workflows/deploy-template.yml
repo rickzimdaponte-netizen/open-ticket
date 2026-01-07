@@ -1,0 +1,46 @@
+name: Deploy (template)
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: |
+          docker build -t my-org/open-ticket:latest .
+
+      - name: Push image to Docker Hub (optional)
+        if: secrets.DOCKERHUB_USERNAME && secrets.DOCKERHUB_TOKEN
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: |
+          echo $DOCKERHUB_TOKEN | docker login -u $DOCKERHUB_USERNAME --password-stdin
+          docker tag my-org/open-ticket:latest $DOCKERHUB_USERNAME/open-ticket:latest
+          docker push $DOCKERHUB_USERNAME/open-ticket:latest
+
+      - name: Deploy via SSH (example)
+        if: secrets.SSH_HOST && secrets.SSH_USER && secrets.SSH_KEY
+        uses: appleboy/ssh-action@v0.1.8
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            docker pull $DOCKERHUB_USERNAME/open-ticket:latest || true
+            docker stop open-ticket || true
+            docker rm open-ticket || true
+            docker run -d --name open-ticket --env-file /home/${{ secrets.SSH_USER }}/open-ticket/.env -v /home/${{ secrets.SSH_USER }}/open-ticket/data:/data $DOCKERHUB_USERNAME/open-ticket:latest
+
+# NOTE: This is a template. Configure secrets:
+# - DOCKERHUB_USERNAME & DOCKERHUB_TOKEN (for pushing image)
+# - SSH_HOST, SSH_USER, SSH_KEY (for deploying to a remote host)
+# - TOKEN (Discord bot token) should be stored as a repository secret and placed into the remote .env when deploying.

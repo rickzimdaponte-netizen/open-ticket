@@ -238,6 +238,23 @@ This will help us grow and reach even more people!
 ### ✅ Verified *(made by community)*
 |Name                                                                 |Author                      |Category                    |Description              |
 |---------------------------------------------------------------------|----------------------------|----------------------------|-------------------------|
+
+---
+
+## 🔧 CI & GitHub Actions (Short guide)
+To help keep the project healthy, a GitHub Actions CI workflow has been added to automatically TypeScript-check, build and run tests on push & PRs to `main` (`.github/workflows/ci.yml`). A deploy template is also available (`.github/workflows/deploy-template.yml`) to push a Docker image and optionally deploy to a remote host via SSH.
+
+**What you need to configure:**
+- Add your Discord bot token as a **Repository Secret** named `TOKEN` (Settings → Secrets and variables → Actions → New repository secret). Do **not** commit tokens to the repo.
+- If you want to publish Docker images, add `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` (or configure GitHub Container Registry credentials).
+- If you want to deploy to a server, add `SSH_HOST`, `SSH_USER` and `SSH_KEY` (private key), and update the deploy job to match your host paths.
+
+**Local dev tip:** use `.env.example` as a template and create a local `.env` with your `TOKEN` for testing. See `.env.example` in the repo root.
+
+**VPS deploy:** See `DEPLOY_VPS.md` for a full guide to deploy using the `deploy-vps` GitHub Actions workflow (SSH-based).
+
+If you'd like, I can help configure deployment (SSH or DockerHub/GCR) and verify the workflows by creating a PR with the changes required for your chosen provider.
+
 |[`ot-config-reload`](https://github.com/open-discord-bots/plugins/tree/main/open-ticket/ot-config-reload/)                |guillee.3                   |⚙️ Utility                  |This plugin adds a new command that allows reloading the Open Ticket config files without the need for a restart. |
 |[`ot-ticket-forms`](https://github.com/open-discord-bots/plugins/tree/main/open-ticket/ot-ticket-forms/)                  |guillee.3                   |💼 Management               |An advanced forms plugin for Open Ticket. |
 |[`ot-feedback`](https://github.com/open-discord-bots/plugins/tree/main/open-ticket/ot-feedback/)                          |an_developer                |💼 Management               |A plugin to gather feedback of your support service. |
